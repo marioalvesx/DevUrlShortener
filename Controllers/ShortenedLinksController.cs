@@ -2,6 +2,7 @@ using DevUrlShortener.Entities;
 using DevUrlShortener.Models;
 using DevUrlShortener.Persistence;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
 namespace DevUrlShortener.Controllers
 {
@@ -17,6 +18,12 @@ namespace DevUrlShortener.Controllers
         }
 
         [HttpGet]
+        public IActionResult Get() {
+            Log.Information("GetAll is called!");
+            return Ok(_context.Links);
+        }
+
+        [HttpGet("{id}")]
         public IActionResult GetById(int id) 
         {
             var link = _context.Links.SingleOrDefault(l => l.Id == id);
@@ -28,12 +35,24 @@ namespace DevUrlShortener.Controllers
             return Ok(link);
         }
 
+        /// <summary>
+        /// Register shortened link
+        /// </summary>
+        /// <remarks>
+        /// { "title": "my-github link", "destinationLink": "https://github.com/marioalvesx" }
+        /// </remarks>
+        /// <param name="model">Link data</param>
+        /// <returns>Object created</returns>
+        /// <response code="201">Success</response>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
         public IActionResult Post(AddOrUpdateShortenedLinkModel model)
         {
-            var link = new ShortenedCustomLink(model.Title, model.DestinationLink);
+            var domain = HttpContext.Request.Host.Value;
+            var link = new ShortenedCustomLink(model.Title, model.DestinationLink, domain);
 
-            _context.Add(link);
+            _context.Links.Add(link);
+            _context.SaveChanges();
 
             return CreatedAtAction("GetById", new { id = link.Id }, link);
         }
@@ -47,6 +66,10 @@ namespace DevUrlShortener.Controllers
                 return NotFound();
 
             link.Update(model.Title, model.DestinationLink);
+
+            _context.Links.Update(link);
+            _context.SaveChanges();
+
             return NoContent();
         }
 
@@ -58,9 +81,10 @@ namespace DevUrlShortener.Controllers
                 return NotFound();
 
             _context.Links.Remove(link);
+            _context.SaveChanges();
+
             return NoContent();
         }
-
 
         [HttpGet("/{code}")]
         public IActionResult RedirectLink(string code)

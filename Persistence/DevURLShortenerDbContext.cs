@@ -6,12 +6,9 @@ namespace DevUrlShortener.Persistence
     public class DevURLShortenerDbContext : DbContext
     {
         private int _currentIndex = 1;
-        public DevURLShortenerDbContext(DbContextOptions<DevURLShortenerDbContext> options) : base(options)
-        {
-            
-        }
+        public DevURLShortenerDbContext(DbContextOptions<DevURLShortenerDbContext> options) : base(options){}
 
-        public List<ShortenedCustomLink> Links { get; set; }
+        public DbSet<ShortenedCustomLink> Links { get; set; }
         
         protected override void OnModelCreating(ModelBuilder builder) 
         {
